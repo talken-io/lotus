@@ -616,7 +616,7 @@ func (vm *VM) Flush(ctx context.Context) (cid.Cid, error) {
 		return cid.Undef, xerrors.Errorf("flushing vm: %w", err)
 	}
 
-	if err := Copy(context.WithValue(ctx, "vm-fush", true), from, to, root); err != nil {
+	if err := Copy(context.WithValue(ctx, "vm-flush", true), from, to, root); err != nil {
 		return cid.Undef, xerrors.Errorf("copying tree: %w", err)
 	}
 
