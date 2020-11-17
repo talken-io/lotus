@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding"
+	"github.com/filecoin-project/go-jsonrpc"
 	"time"
 
 	"github.com/ipfs/go-cid"
@@ -76,6 +77,7 @@ type API struct {
 	ListenAddress       string
 	RemoteListenAddress string
 	Timeout             Duration
+	MaxRequestSize       int
 }
 
 // Libp2p contains configs for libp2p
@@ -126,6 +128,7 @@ func defCommon() Common {
 		API: API{
 			ListenAddress: "/ip4/127.0.0.1/tcp/1234/http",
 			Timeout:       Duration(30 * time.Second),
+			MaxRequestSize: jsonrpc.DEFAULT_MAX_REQUEST_SIZE,
 		},
 		Libp2p: Libp2p{
 			ListenAddresses: []string{

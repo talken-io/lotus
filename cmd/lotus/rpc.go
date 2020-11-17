@@ -33,7 +33,9 @@ import (
 var log = logging.Logger("main")
 
 func serveRPC(a api.FullNode, stop node.StopFunc, addr multiaddr.Multiaddr, shutdownCh <-chan struct{}) error {
-	rpcServer := jsonrpc.NewServer()
+	rpcServer := jsonrpc.NewServer(jsonrpc.WithMaxRequestSize(100)) //FIXME: Set up from config.
+	// FIXME: Which other calls of jsonrpc.NewServer in the rest of the commands
+	// do we want to configure?
 	rpcServer.Register("Filecoin", apistruct.PermissionedFullAPI(metrics.MetricedFullAPI(a)))
 
 	ah := &auth.Handler{
