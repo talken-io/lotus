@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
 	"go.uber.org/fx"
@@ -263,17 +265,21 @@ func HandleMigrateProviderFunds(lc fx.Lifecycle, ds dtypes.MetadataDS, node api.
 			}
 			ts, err := node.ChainHead(ctx)
 			if err != nil {
-				return err
+				log.Errorf("provider funds migration - getting chain head: %w", err)
+				return nil
 			}
 
 			mi, err := node.StateMinerInfo(ctx, address.Address(minerAddress), ts.Key())
 			if err != nil {
-				return err
+				log.Errorf("provider funds migration - getting miner info %s: %w", minerAddress, err)
+				return nil
 			}
 
 			_, err = node.MarketReserveFunds(ctx, mi.Worker, address.Address(minerAddress), value)
 			if err != nil {
-				return err
+				log.Errorf("provider funds migration - reserving funds (wallet %s, addr %s, funds %d): %w",
+					mi.Worker, minerAddress, value, err)
+				return nil
 			}
 
 			return ds.Delete(datastore.NewKey("/marketfunds/provider"))
@@ -283,13 +289,18 @@ func HandleMigrateProviderFunds(lc fx.Lifecycle, ds dtypes.MetadataDS, node api.
 
 // NewProviderDAGServiceDataTransfer returns a data transfer manager that just
 // uses the provider's Staging DAG service for transfers
-func NewProviderDAGServiceDataTransfer(lc fx.Lifecycle, h host.Host, gs dtypes.StagingGraphsync, ds dtypes.MetadataDS) (dtypes.ProviderDataTransfer, error) {
+func NewProviderDAGServiceDataTransfer(lc fx.Lifecycle, h host.Host, gs dtypes.StagingGraphsync, ds dtypes.MetadataDS, r repo.LockedRepo) (dtypes.ProviderDataTransfer, error) {
 	sc := storedcounter.New(ds, datastore.NewKey("/datatransfer/provider/counter"))
 	net := dtnet.NewFromLibp2pHost(h)
 
 	dtDs := namespace.Wrap(ds, datastore.NewKey("/datatransfer/provider/transfers"))
 	transport := dtgstransport.NewTransport(h.ID(), gs)
-	dt, err := dtimpl.NewDataTransfer(dtDs, net, transport, sc)
+	err := os.MkdirAll(filepath.Join(r.Path(), "data-transfer"), 0755) //nolint: gosec
+	if err != nil && !os.IsExist(err) {
+		return nil, err
+	}
+
+	dt, err := dtimpl.NewDataTransfer(dtDs, filepath.Join(r.Path(), "data-transfer"), net, transport, sc)
 	if err != nil {
 		return nil, err
 	}

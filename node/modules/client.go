@@ -3,6 +3,8 @@ package modules
 import (
 	"bytes"
 	"context"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/filecoin-project/go-multistore"
@@ -55,16 +57,20 @@ func HandleMigrateClientFunds(lc fx.Lifecycle, ds dtypes.MetadataDS, wallet full
 				if xerrors.Is(err, datastore.ErrNotFound) {
 					return nil
 				}
-				return err
+				log.Errorf("client funds migration - getting datastore value: %w", err)
+				return nil
 			}
 
 			var value abi.TokenAmount
 			if err = value.UnmarshalCBOR(bytes.NewReader(b)); err != nil {
-				return err
+				log.Errorf("client funds migration - unmarshalling datastore value: %w", err)
+				return nil
 			}
 			_, err = fundMgr.Reserve(ctx, addr, addr, value)
 			if err != nil {
-				return err
+				log.Errorf("client funds migration - reserving funds (wallet %s, addr %s, funds %d): %w",
+					addr, addr, value, err)
+				return nil
 			}
 
 			return ds.Delete(datastore.NewKey("/marketfunds/client"))
@@ -112,13 +118,18 @@ func RegisterClientValidator(crv dtypes.ClientRequestValidator, dtm dtypes.Clien
 
 // NewClientGraphsyncDataTransfer returns a data transfer manager that just
 // uses the clients's Client DAG service for transfers
-func NewClientGraphsyncDataTransfer(lc fx.Lifecycle, h host.Host, gs dtypes.Graphsync, ds dtypes.MetadataDS) (dtypes.ClientDataTransfer, error) {
+func NewClientGraphsyncDataTransfer(lc fx.Lifecycle, h host.Host, gs dtypes.Graphsync, ds dtypes.MetadataDS, r repo.LockedRepo) (dtypes.ClientDataTransfer, error) {
 	sc := storedcounter.New(ds, datastore.NewKey("/datatransfer/client/counter"))
 	net := dtnet.NewFromLibp2pHost(h)
 
 	dtDs := namespace.Wrap(ds, datastore.NewKey("/datatransfer/client/transfers"))
 	transport := dtgstransport.NewTransport(h.ID(), gs)
-	dt, err := dtimpl.NewDataTransfer(dtDs, net, transport, sc)
+	err := os.MkdirAll(filepath.Join(r.Path(), "data-transfer"), 0755) //nolint: gosec
+	if err != nil && !os.IsExist(err) {
+		return nil, err
+	}
+
+	dt, err := dtimpl.NewDataTransfer(dtDs, filepath.Join(r.Path(), "data-transfer"), net, transport, sc)
 	if err != nil {
 		return nil, err
 	}
