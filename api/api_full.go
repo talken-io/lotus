@@ -250,6 +250,8 @@ type FullNode interface {
 	WalletBalance(context.Context, address.Address) (types.BigInt, error)
 	// WalletSign signs the given bytes using the given address.
 	WalletSign(context.Context, address.Address, []byte) (*crypto.Signature, error)
+	// WalletConvertMessage extracts the signing raw data from the given message.
+	WalletConvertMessage(context.Context, address.Address, *types.Message) ([]byte, error)
 	// WalletSignMessage signs the given message using the given address.
 	WalletSignMessage(context.Context, address.Address, *types.Message) (*types.SignedMessage, error)
 	// WalletVerify takes an address, a signature, and some bytes, and indicates whether the signature is valid.
