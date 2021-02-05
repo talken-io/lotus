@@ -15,7 +15,7 @@ import (
 	logging "github.com/ipfs/go-log"
 )
 
-var log = logging.Logger("drand")
+var log = logging.Logger("rest")
 
 type Transaction struct {
 	Message *types.Message `json:"message"`
