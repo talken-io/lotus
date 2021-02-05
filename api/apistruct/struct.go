@@ -143,6 +143,7 @@ type FullNodeStruct struct {
 		WalletList            func(context.Context) ([]address.Address, error)                                     `perm:"write"`
 		WalletBalance         func(context.Context, address.Address) (types.BigInt, error)                         `perm:"read"`
 		WalletSign            func(context.Context, address.Address, []byte) (*crypto.Signature, error)            `perm:"sign"`
+		WalletConvertMessage  func(context.Context, address.Address, *types.Message) ([]byte, error)               `perm:"sign"`
 		WalletSignMessage     func(context.Context, address.Address, *types.Message) (*types.SignedMessage, error) `perm:"sign"`
 		WalletVerify          func(context.Context, address.Address, []byte, *crypto.Signature) (bool, error)      `perm:"read"`
 		WalletDefaultAddress  func(context.Context) (address.Address, error)                                       `perm:"write"`
@@ -690,6 +691,10 @@ func (c *FullNodeStruct) WalletBalance(ctx context.Context, a address.Address) (
 
 func (c *FullNodeStruct) WalletSign(ctx context.Context, k address.Address, msg []byte) (*crypto.Signature, error) {
 	return c.Internal.WalletSign(ctx, k, msg)
+}
+
+func (c *FullNodeStruct) WalletConvertMessage(ctx context.Context, k address.Address, msg *types.Message) ([]byte, error) {
+	return c.Internal.WalletConvertMessage(ctx, k, msg)
 }
 
 func (c *FullNodeStruct) WalletSignMessage(ctx context.Context, k address.Address, msg *types.Message) (*types.SignedMessage, error) {

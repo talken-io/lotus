@@ -45,6 +45,19 @@ func (a *WalletAPI) WalletSign(ctx context.Context, k address.Address, msg []byt
 	})
 }
 
+func (a *WalletAPI) WalletConvertMessage(ctx context.Context, k address.Address, msg *types.Message) ([]byte, error) {
+	mb, err := msg.ToStorageBlock()
+	if err != nil {
+		return nil, xerrors.Errorf("serializing message: %w", err)
+	}
+
+	if err != nil {
+		return nil, xerrors.Errorf("failed to sign message: %w", err)
+	}
+
+	return mb.RawData(), nil
+}
+
 func (a *WalletAPI) WalletSignMessage(ctx context.Context, k address.Address, msg *types.Message) (*types.SignedMessage, error) {
 	keyAddr, err := a.StateManagerAPI.ResolveToKeyAddress(ctx, k, nil)
 	if err != nil {

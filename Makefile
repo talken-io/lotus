@@ -58,10 +58,10 @@ deps: $(BUILD_DEPS)
 .PHONY: deps
 
 debug: GOFLAGS+=-tags=debug
-debug: lotus lotus-miner lotus-worker lotus-seed
+debug: lotus lotus-miner lotus-worker lotus-seed lotus-rest
 
 2k: GOFLAGS+=-tags=2k
-2k: lotus lotus-miner lotus-worker lotus-seed
+2k: lotus lotus-miner lotus-worker lotus-seed lotus-rest
 
 lotus: $(BUILD_DEPS)
 	rm -f lotus
@@ -84,6 +84,7 @@ lotus-worker: $(BUILD_DEPS)
 	go run github.com/GeertJohan/go.rice/rice append --exec lotus-worker -i ./build
 .PHONY: lotus-worker
 BINS+=lotus-worker
+
 
 lotus-shed: $(BUILD_DEPS)
 	rm -f lotus-shed
@@ -124,6 +125,13 @@ lotus-seed: $(BUILD_DEPS)
 
 .PHONY: lotus-seed
 BINS+=lotus-seed
+
+lotus-rest: $(BUILD_DEPS)
+	rm -f lotus-rest
+	go build $(GOFLAGS) -o lotus-rest ./cmd/lotus-rest
+	go run github.com/GeertJohan/go.rice/rice append --exec lotus-rest -i ./build
+.PHONY: lotus-rest
+BINS+=lotus-rest
 
 benchmarks:
 	go run github.com/whyrusleeping/bencher ./... > bench.json
