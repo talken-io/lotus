@@ -1,4 +1,4 @@
-package lotus_rest
+package main
 
 import (
 	"encoding/json"
